@@ -1,14 +1,22 @@
 <?php
-function isValidLength(string $input, int $maxLength = 20): bool {
+function isValidLength(string $input, int $maxLength): bool {
   return mb_strlen($input) <= $maxLength;
 }
 
-function isJapaneseOnly(string $input): bool {
-  return mb_ereg('^[ぁ-んァ-ヶ一-龠々]+$', $input);
+function isJapaneseName(string $input): bool {
+  // ひらがな・カタカナ・漢字のみ
+  return mb_ereg('^[ぁ-んァ-ヶ一-龠々ー]+$', $input);
+}
+
+function isValidAddress(string $input): bool {
+  // ひらがな・カタカナ・漢字・数字（全角/半角）・ハイフンのみ許可
+  return mb_ereg('^[ぁ-んァ-ヶ一-龠々ー0-9０-９\-ー]+$', $input);
 }
 
 function isValidEmail(string $input): bool {
-  return filter_var($input, FILTER_VALIDATE_EMAIL) !== false;
+  // @, . _ - のみ許可 + filter_var で形式チェック
+  return filter_var($input, FILTER_VALIDATE_EMAIL) !== false &&
+    preg_match('/^[a-zA-Z0-9._\-@]+$/', $input);
 }
 ?>
 
@@ -30,18 +38,18 @@ $input_email = filter_input(INPUT_GET, 'usermail');
 if (
   !$input_name ||
   !isValidLength($input_name, 20) ||
-  !isJapaneseOnly($input_name)
+  !isJapaneseName($input_name)
 ) {
-  header('Location: /try3/inputuser.html');
+  echo "20文字以内で名前を入力してください。記号等は利用できません。";
   exit;
 }
 
 if (
   !$input_address ||
   !isValidLength($input_address, 50) ||
-  !isJapaneseOnly($input_address)
+  !isValidAddress($input_address)
 ) {
-  header('Location: /try3/inputuser.html');
+  echo "50文字以内で住所を入力してください。記号等は利用できません。";
   exit;
 }
 
@@ -50,16 +58,16 @@ if (
   !isValidLength($input_email, 100) ||
   !isValidEmail($input_email)
 ) {
-  header('Location: /try3/inputuser.html');
+  echo "正しいメールアドレス形式で入力してください。記号は.-_@のみ利用可能。";
   exit;
 }
 
 echo "あなたが入力した値<br>";
-echo "名前：" . $_GET['username'] . "<br>";
-echo "住所：" . $_GET['useraddress']. "<br>";
-echo "メールアドレス：" . $_GET['usermail'];
+echo "名前：" . htmlspecialchars($input_name, ENT_QUOTES, 'UTF-8') . "<br>";
+echo "住所：" . htmlspecialchars($input_address, ENT_QUOTES, 'UTF-8') . "<br>";
+echo "メールアドレス：" . htmlspecialchars($input_email, ENT_QUOTES, 'UTF-8');
 ?>
-    </h2>
+      </h2>
     </div>
   </body>
 </html>
